@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:english_words/english_words.dart';
+import 'dart:math';
 
 void main() => runApp(MyApp());
 
@@ -7,30 +9,49 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: BMIPage(title: 'BMI'),
+        title: 'BMI',
+        home: BMI(title: 'BMI'),
     );
   }
 }
 
-class BMIPage extends StatefulWidget {
-  BMIPage({Key key, this.title}) : super(key: key);
+class BMI extends StatefulWidget {
+  BMI({Key key, this.title}) : super(key: key);
   final String title;
-
   @override
-  _BMIPageState createState() => _BMIPageState();
+  BMI_calculate createState() => BMI_calculate();
 }
 
-class _BMIPageState extends State<BMIPage> {
-  int _counter = 0;
+class BMI_calculate extends State<BMI> {
+  double bmi = 0.0; //初期値
+  double weight= 0.0;
+  double height = 0.0;
 
-  void _incrementCounter() {
+  final formKey = GlobalKey<FormState>();
+  final heightFocus = FocusNode();
+  final weightFocus = FocusNode();
+
+  void newHeight(double _height){
     setState(() {
-      _counter++;
+      height = _height;
     });
+  }
+
+  void newWeight(double _weight){
+    setState(() {
+      weight = _weight;
+    });
+  }
+
+  void newBmi(double _bmi){
+    setState(() {
+      bmi = _bmi;
+    });
+  }
+
+  void calculate(double _bmi,double _weight,double _height){
+    _bmi = _weight / pow(_height,2);
+    newBmi(_bmi);
   }
 
   @override
@@ -41,23 +62,70 @@ class _BMIPageState extends State<BMIPage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'You have pushed the button this many times:',
+              '身長と体重を入力してください',
+            ),
+            Form(
+              child: Column(
+                children: <Widget>[
+                  heightFormField(context),
+                  weightFormField(context),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 30.0),
+                    child: RaisedButton(
+                        onPressed: (){
+                          if(formKey.currentState.validate()){
+                            formKey.currentState.save();
+                          }
+                          calculate(bmi,height,weight);
+                        },
+                        child: Text('Submit'),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Text(
-              '$_counter',
+              'BMIは' + bmi.toStringAsFixed(2),
               style: Theme.of(context).textTheme.display1,
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
+  TextFormField heightFormField(BuildContext context){
+    return TextFormField(
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
+      autofocus: true,
+      decoration: InputDecoration(labelText: "身長をm単位で記入"),
+      focusNode: heightFocus,
+      onFieldSubmitted: (v){
+        heightFocus.unfocus();
+      },
+      onSaved: (value){
+        newHeight(double.parse(value));
+      },
+    );
+  }
+
+  TextFormField weightFormField(BuildContext context){
+    return TextFormField(
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.done,
+      autofocus: true,
+      decoration: InputDecoration(labelText: "体重をkg単位で記入"),
+      focusNode: weightFocus,
+      onFieldSubmitted: (v){
+        weightFocus.unfocus();
+      },
+      onSaved: (value){
+        newWeight(double.parse(value));
+      },
+    );
+  }
+
 }
